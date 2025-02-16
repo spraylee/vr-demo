@@ -53,15 +53,15 @@ const stars = ref<any[]>([]);
 
 // 初始化星空
 function initStars() {
-  const starCount = 3000;
+  const starCount = 1000;
   const radius = 80000;
 
   for (let i = 0; i < starCount; i++) {
     // 使用更陡的幂函数来创造更多暗星星
-    const magnitude = Math.pow(random(0, 1), 2) * 100 + 50;
+    const magnitude = Math.pow(random(0, 1), 2) * 40 + 90;
 
     // 调整亮度范围，整体提亮一些
-    const brightness = Math.pow(random(0, 1), 3) * 0.5 + 0.3;
+    const brightness = Math.pow(random(0, 1), 3) * 0.8 + 0.2;
 
     stars.value.push({
       id: i,
@@ -83,29 +83,107 @@ function initStars() {
 
 // 添加银河带
 function addMilkyWay() {
-  const milkyWayStars = 3000;
+  const milkyWayStars = 3000; // 减少星星数量
   const radius = 80000;
+  const galaxyTilt = 60; // 银河倾角（度）
+  const tiltRad = (galaxyTilt * Math.PI) / 180;
+
+  // 创建螺旋结构
+  function generateGalaxyPosition(
+    r: number,
+    theta: number
+  ): { x: number; y: number; z: number } {
+    // 增加螺旋臂的数量和清晰度
+    const spiralFactor = 0.15;
+    const numberOfArms = 2; // 主要的螺旋臂数量
+    const armWidth = 8000; // 增加旋臂宽度
+
+    // 创建更自然的螺旋臂，增加随机性
+    const armOffset =
+      Math.sin(theta * numberOfArms + r * spiralFactor) * armWidth;
+    // 增加随机偏移范围
+    const randomOffset = random(-4000, 4000) * (r / radius);
+    const adjustedRadius = r + armOffset + randomOffset;
+
+    // 基础平面坐标
+    let x = adjustedRadius * Math.cos(theta + r * spiralFactor);
+    let z = adjustedRadius * Math.sin(theta + r * spiralFactor);
+
+    // 增加垂直方向的厚度，使用更平滑的分布
+    const baseThickness = 6000; // 增加基础厚度
+    const thicknessFalloff = Math.exp(-r / (radius * 0.7)); // 降低厚度衰减速度
+    const thickness = baseThickness * thicknessFalloff + 2000;
+    // 使用改进的高斯分布
+    const gaussianFactor = Math.exp(-Math.pow(random(0, 1), 1.5));
+    const y = random(-thickness, thickness) * gaussianFactor;
+
+    // 应用倾斜角度
+    const tiltedY = y * Math.cos(tiltRad) - z * Math.sin(tiltRad);
+    const tiltedZ = y * Math.sin(tiltRad) + z * Math.cos(tiltRad);
+
+    return { x, y: tiltedY, z: tiltedZ };
+  }
+
+  // 生成更丰富的恒星颜色
+  function generateStarColor(): string {
+    const colors = [
+      "#ffffff", // 白色 (20%)
+      "#fff4ea", // 略带黄的白色 (30%)
+      "#eaeeff", // 略带蓝的白色 (20%)
+      "#fff0e4", // 橙白色 (15%)
+      "#ffeeda", // 黄白色 (15%)
+    ];
+    const weights = [0.2, 0.3, 0.2, 0.15, 0.15];
+    const rand = Math.random();
+    let sum = 0;
+    for (let i = 0; i < weights.length; i++) {
+      sum += weights[i];
+      if (rand < sum) return colors[i];
+    }
+    return colors[0];
+  }
 
   for (let i = 0; i < milkyWayStars; i++) {
+    // 使用更分散的分布
     const theta = random(0, Math.PI * 2);
-    const width = random(-2000, 2000);
+    // 使用更平缓的径向分布
+    const r = Math.pow(random(0.2, 1), 0.8) * radius;
+    const pos = generateGalaxyPosition(r, theta);
 
-    const x = radius * Math.cos(theta);
-    const y = width + random(-500, 500);
-    const z = radius * Math.sin(theta);
+    // 调整亮度分布，使边缘区域更明显
+    const distanceFromCenter =
+      Math.sqrt(pos.x * pos.x + pos.z * pos.z) / radius;
+    const centralBrightness = Math.max(0.25, 1 - distanceFromCenter);
+    const opacity =
+      Math.pow(random(0.6, 1), 1.5) * 0.6 + centralBrightness * 0.5;
 
-    const size = random(80, 180);
-    // 调整银河带亮度
-    const opacity = Math.pow(random(0, 1), 2.5) * 0.4 + 0.3;
+    // 调整大小分布，整体减小星星尺寸
+    const size =
+      random(25, 30) * (0.7 + Math.pow(1 - distanceFromCenter, 2) * 0.2);
+    const color = generateStarColor();
 
     stars.value.push({
       id: `milkyway-${i}`,
-      position: `${x} ${y} ${z}`,
+      position: `${pos.x} ${pos.y} ${pos.z}`,
       size: size,
-      material: `shader: standard; color: #ffffff; opacity: ${opacity}; transparent: true; metalness: 0.1; roughness: 0.9; emissive: #ffffff; emissiveIntensity: ${
-        opacity * 0.4
+      material: `shader: standard; color: ${color}; opacity: ${opacity}; transparent: true; metalness: 0.1; roughness: 0.9; emissive: ${color}; emissiveIntensity: ${
+        opacity * 0.5 // 略微增加发光强度来补偿尺寸减小
       };`,
     });
+
+    // 调整光源分布
+    if (distanceFromCenter < 0.3 && i % 300 === 0) {
+      // 减少光源数量
+      stars.value.push({
+        id: `milkyway-light-${i}`,
+        position: `${pos.x} ${pos.y} ${pos.z}`,
+        size: 1,
+        material: "shader: standard; opacity: 0;",
+        light: `type: point; intensity: ${
+          opacity * 0.6 // 略微增加光源强度
+        }; distance: 25000; decay: 2; color: ${color};`,
+      });
+    }
   }
   console.log("Milky way stars added:", milkyWayStars);
 }
