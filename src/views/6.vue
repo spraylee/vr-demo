@@ -18,13 +18,15 @@
     </a-entity>
 
     <!-- 地面 - 可选，用于参考 -->
-    <a-plane
+    <a-circle
       position="0 0 0"
       rotation="-90 0 0"
-      width="100"
-      height="100"
-      color="#111"
-    ></a-plane>
+      radius="4"
+      material="shader: standard; color: #2a2a35; metalness: 0.2; roughness: 0.8; emissive: #1a1a25; emissiveIntensity: 0.8; 
+      normalTextureRepeat: 5 5; normalTextureOffset: 0 0;
+      src: https://cdn.aframe.io/a-painter/images/floor.jpg;
+      repeat: 5 5"
+    ></a-circle>
   </a-scene>
 </template>
 
@@ -36,7 +38,6 @@ function random(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
-// 生成球面坐标
 function generateSphericalPosition(radius: number): string {
   const theta = random(0, Math.PI * 2); // 方位角
   const phi = Math.acos(random(-1, 1)); // 天顶角
@@ -83,7 +84,7 @@ function initStars() {
 
 // 添加银河带
 function addMilkyWay() {
-  const milkyWayStars = 3000; // 减少星星数量
+  const milkyWayStars = 2000; // 减少星星数量
   const radius = 80000;
   const galaxyTilt = 60; // 银河倾角（度）
   const tiltRad = (galaxyTilt * Math.PI) / 180;
