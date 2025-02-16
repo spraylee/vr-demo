@@ -1,37 +1,56 @@
 <template>
-  <a-scene>
-    <!-- 相机设置 -->
-    <a-entity position="0 1.6 0">
-      <a-camera far="100000" near="0.1" fov="90"></a-camera>
-    </a-entity>
+  <div class="scene-container">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loader"></div>
+      <p class="loading-text">正在加载星空场景...</p>
+    </div>
 
-    <!-- 天空盒 - 使用深色背景 -->
-    <a-sky color="#000005" radius="90000"></a-sky>
+    <!-- VR场景 -->
+    <a-scene v-show="!loading" @loaded="onSceneLoaded">
+      <!-- 相机设置 -->
+      <a-entity position="0 1.6 0">
+        <a-camera far="100000" near="0.1" fov="90"></a-camera>
+      </a-entity>
 
-    <!-- 星星群 -->
-    <a-entity position="0 0 0" id="starField">
-      <template v-for="star in stars" :key="star.id">
-        <a-entity :position="star.position" :light="star.light">
-          <a-sphere :radius="star.size" :material="star.material"></a-sphere>
-        </a-entity>
-      </template>
-    </a-entity>
+      <!-- 天空盒 - 使用深色背景 -->
+      <a-sky color="#000005" radius="90000"></a-sky>
 
-    <!-- 地面 - 可选，用于参考 -->
-    <a-circle
-      position="0 0 0"
-      rotation="-90 0 0"
-      radius="4"
-      material="shader: standard; color: #2a2a35; metalness: 0.2; roughness: 0.8; emissive: #1a1a25; emissiveIntensity: 0.8; 
-      normalTextureRepeat: 5 5; normalTextureOffset: 0 0;
-      src: https://cdn.aframe.io/a-painter/images/floor.jpg;
-      repeat: 5 5"
-    ></a-circle>
-  </a-scene>
+      <!-- 星星群 -->
+      <a-entity position="0 0 0" id="starField">
+        <template v-for="star in stars" :key="star.id">
+          <a-entity :position="star.position" :light="star.light">
+            <a-sphere :radius="star.size" :material="star.material"></a-sphere>
+          </a-entity>
+        </template>
+      </a-entity>
+
+      <!-- 地面 - 可选，用于参考 -->
+      <a-circle
+        position="0 0 0"
+        rotation="-90 0 0"
+        radius="4"
+        material="shader: standard; color: #2a2a35; metalness: 0.2; roughness: 0.8; emissive: #1a1a25; emissiveIntensity: 0.8; 
+        normalTextureRepeat: 5 5; normalTextureOffset: 0 0;
+        src: https://cdn.aframe.io/a-painter/images/floor.jpg;
+        repeat: 5 5"
+      ></a-circle>
+    </a-scene>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, ref } from "vue";
+
+const loading = ref(true);
+
+// 场景加载完成的回调
+const onSceneLoaded = () => {
+  // 给一个短暂的延迟确保所有资源都加载完成
+  setTimeout(() => {
+    loading.value = false;
+  }, 500);
+};
 
 // 生成随机数在指定范围内
 function random(min: number, max: number): number {
@@ -190,15 +209,62 @@ function addMilkyWay() {
 }
 
 onMounted(() => {
-  initStars();
-  addMilkyWay();
+  setTimeout(() => {
+    initStars();
+    addMilkyWay();
+  }, 200);
 });
 </script>
 
 <style scoped>
 /* 确保场景占满整个视口 */
+.scene-container {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
 :deep(a-scene) {
   height: 100vh;
   width: 100vw;
+}
+
+/* 加载遮罩层 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000005;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* 加载动画 */
+.loader {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  color: #ffffff;
+  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

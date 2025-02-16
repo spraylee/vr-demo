@@ -1,13 +1,15 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import ThreeDemo from "../views/ThreeDemo.vue";
+import IndexView from "../views/index.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/",
-      redirect: "/home",
+      name: "index",
+      component: IndexView,
     },
     {
       path: "/home",
